@@ -17,6 +17,22 @@ const useIsMobile = () => {
   return isMobile;
 };
 
+// Theme: light / dark, persisted in localStorage, applied as a class on <html>.
+const THEME_KEY = "henghuy-theme";
+const useTheme = () => {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+  return [theme, () => setTheme(t => (t === "dark" ? "light" : "dark"))];
+};
+
 // ─── DATA ───────────────────────────────────────────────────────────────────
 const INITIAL_CARS = [
   { id:1, brand:"Rolls-Royce", model:"Cullinan", year:2023, price:750000, mileage:3500, color:"Black", engine:"6.75L Twin-Turbo V12", power:"563 hp", transmission:"8-speed auto", top_speed:"250 km/h", accel:"5.2s", status:"active", featured:true, badge:"Hot New", emoji:"⚫", desc:"The world's most extraordinary SUV. The Cullinan combines all-terrain capability with Rolls-Royce's signature 'magic carpet ride' — the ultimate statement of luxury for the modern explorer." },
@@ -34,18 +50,20 @@ const INITIAL_CARS = [
 const BRANDS = [...new Set(INITIAL_CARS.map(c => c.brand))];
 
 // ─── STYLES ─────────────────────────────────────────────────────────────────
+// Palette values are CSS variables — actual colors are defined in injectStyles()
+// for both light and dark themes. This lets us flip the whole app by toggling
+// a `.dark` class on <html>.
 const G = {
-  // palette
-  white:   "#FFFFFF",
-  bg:      "#FAFAF7",
-  bg2:     "#F2EFE6",
-  border:  "#E6E2D6",
-  border2: "#0A0A0A",
-  text:    "#000000",
-  textMid: "#000000",
-  textSub: "#000000",
-  accent:  "#C8923D",
-  accentDark: "#8A6A2A",
+  white:   "var(--surface)",
+  bg:      "var(--bg)",
+  bg2:     "var(--bg2)",
+  border:  "var(--border)",
+  border2: "var(--border2)",
+  text:    "var(--text)",
+  textMid: "var(--text)",
+  textSub: "var(--text)",
+  accent:  "var(--accent)",
+  accentDark: "var(--accent-dark)",
   // typography
   sans:    "'Inter', 'Helvetica Neue', sans-serif",
   serif:   "'Fraunces', 'Playfair Display', Georgia, serif",
@@ -63,16 +81,48 @@ const injectStyles = () => {
   s.id = "aurum-styles";
   s.textContent = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap');
+    :root {
+      --bg:          #FAFAF7;
+      --bg2:         #F2EFE6;
+      --surface:     #FFFFFF;
+      --border:      #E6E2D6;
+      --border2:     #0A0A0A;
+      --text:        #000000;
+      --accent:      #C8923D;
+      --accent-dark: #8A6A2A;
+      --nav-bg:      rgba(248, 248, 243, 0.85);
+      --scrollbar:   #D0CCC0;
+      --scrollbar-hover: #A8A399;
+      --focus-ring:  rgba(0,0,0,0.08);
+      --card-grad-end: #EAE5D6;
+      color-scheme: light;
+    }
+    .dark {
+      --bg:          #000000;
+      --bg2:         #161616;
+      --surface:     #1A1A1A;
+      --border:      #2A2A2A;
+      --border2:     #FFFFFF;
+      --text:        #FFFFFF;
+      --accent:      #E5B85C;
+      --accent-dark: #C8923D;
+      --nav-bg:      rgba(10, 10, 10, 0.85);
+      --scrollbar:   #2A2A2A;
+      --scrollbar-hover: #444;
+      --focus-ring:  rgba(255,255,255,0.10);
+      --card-grad-end: #1F1F1F;
+      color-scheme: dark;
+    }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:${G.bg};color:${G.text};font-family:${G.sans};font-size:15px;line-height:1.6;font-weight:450;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em}
+    body{background:var(--bg);color:var(--text);font-family:${G.sans};font-size:15px;line-height:1.6;font-weight:450;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em;transition:background-color 0.25s ease, color 0.25s ease}
     button{cursor:pointer;font-family:${G.sans};font-size:14px;font-weight:500}
-    input,select,textarea{font-family:${G.sans};font-size:14px;color:${G.text}}
-    input:focus,select:focus,textarea:focus{border-color:${G.text} !important;box-shadow:0 0 0 3px rgba(0,0,0,0.06) !important}
+    input,select,textarea{font-family:${G.sans};font-size:14px;color:var(--text);background:var(--surface)}
+    input:focus,select:focus,textarea:focus{border-color:var(--text) !important;box-shadow:0 0 0 3px var(--focus-ring) !important}
     p,div,span,li,td,th,label{color:inherit}
     ::-webkit-scrollbar{width:10px;height:10px}
     ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:#D0CCC0;border-radius:10px;border:2px solid ${G.bg}}
-    ::-webkit-scrollbar-thumb:hover{background:#A8A399}
+    ::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:10px;border:2px solid var(--bg)}
+    ::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-hover)}
     @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .fade-up{animation:fadeUp .45s cubic-bezier(0.22,1,0.36,1) both}
@@ -158,7 +208,7 @@ const CarCard = ({ car, onView, onFav, isFav }) => (
     onMouseEnter={e => { e.currentTarget.style.boxShadow=G.shadowHover; e.currentTarget.style.transform="translateY(-4px)"; }}
     onMouseLeave={e => { e.currentTarget.style.boxShadow="0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)"; e.currentTarget.style.transform="translateY(0)"; }}>
     {/* Image area */}
-    <div style={{ background:`linear-gradient(135deg, ${G.bg2} 0%, #9c9c98 100%)`, height:220, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"5.5rem", position:"relative", overflow:"hidden" }}>
+    <div style={{ background:`linear-gradient(135deg, ${G.bg2} 0%, var(--card-grad-end) 100%)`, height:220, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"5.5rem", position:"relative", overflow:"hidden" }}>
       {car.images && car.images[0]
         ? <img src={car.images[0]} alt={`${car.brand} ${car.model}`} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
         : car.emoji}
@@ -185,6 +235,7 @@ const CarCard = ({ car, onView, onFav, isFav }) => (
 // ─── NAV ─────────────────────────────────────────────────────────────────────
 const Nav = ({ page, setPage, user, favorites }) => {
   const isMobile = useIsMobile();
+  const [theme, toggleTheme] = useTheme();
   const links = [
     { label: isMobile ? "Cars" : "Collection", page:"inventory" },
     { label:"About", page:"about" },
@@ -192,7 +243,7 @@ const Nav = ({ page, setPage, user, favorites }) => {
   ];
   const navBtn = (active) => ({ background: active ? G.text : "transparent", border:"none", fontSize: isMobile ? 11 : 13, color: active ? G.white : G.text, padding: isMobile ? "6px 9px" : "8px 16px", fontWeight:500, cursor:"pointer", borderRadius:G.radiusPill, transition:"background 0.15s, color 0.15s", whiteSpace:"nowrap" });
   return (
-    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, background:"rgba(248, 248, 243, 0.85)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:`1px solid ${G.border}`, padding: isMobile ? "0 1rem" : "0 2.5rem", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, background:"var(--nav-bg)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:`1px solid ${G.border}`, padding: isMobile ? "0 1rem" : "0 2.5rem", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
       <div onClick={() => setPage("home")} style={{ fontFamily:G.serif, fontSize: isMobile ? "1.1rem" : "1.5rem", fontWeight:500, letterSpacing:"-0.01em", cursor:"pointer", whiteSpace:"nowrap" }}>
         {isMobile ? "HengHuy" : <>HengHuy <span style={{ color:G.accent }}>AutoCars</span></>}
       </div>
@@ -212,6 +263,14 @@ const Nav = ({ page, setPage, user, favorites }) => {
         ) : (
           <Btn variant="outline" onClick={() => setPage("auth")} style={{ fontSize: isMobile ? 11 : 13, padding: isMobile ? "6px 12px" : "8px 20px", marginLeft: isMobile ? 4 : 8 }}>Sign In</Btn>
         )}
+        <button
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          style={{ background:"transparent", border:`1px solid ${G.border}`, color:G.text, width: isMobile ? 30 : 34, height: isMobile ? 30 : 34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize: isMobile ? 14 : 15, cursor:"pointer", marginLeft: isMobile ? 4 : 8, transition:"background 0.15s, color 0.15s, border-color 0.15s" }}
+        >
+          {theme === "dark" ? "☀" : "☾"}
+        </button>
       </div>
     </nav>
   );
@@ -1011,13 +1070,13 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
                 {[["Brand","brand","Toyota"],["Model","model","Land Cruiser VXR"],["Year","year","2023"],["Price ($)","price","180000"],["Mileage (km)","mileage","5000"],["Color","color","Pearl White"],["Engine","engine","3.5L Twin-Turbo V6"],["Power","power","409 hp"],["Transmission","transmission","10-speed auto"],["Top Speed","top_speed","210 km/h"],["0–100 km/h","accel","6.9s"]].map(([label,key,placeholder]) => (
                   <div key={key}>
                     <Label>{label}</Label>
-                    <input value={form[key]} onChange={e => F(key, e.target.value)} placeholder={placeholder} style={{ width:"100%", background:G.bg, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border2}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none" }} />
+                    <input value={form[key]} onChange={e => F(key, e.target.value)} placeholder={placeholder} style={{ width:"100%", background:G.white, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none" }} />
                   </div>
                 ))}
               </div>
               <div style={{ marginTop:16 }}>
                 <Label>Description</Label>
-                <textarea value={form.desc} onChange={e => F("desc", e.target.value)} placeholder="Vehicle description..." style={{ width:"100%", background:G.bg, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border2}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", resize:"vertical", minHeight:80 }} />
+                <textarea value={form.desc} onChange={e => F("desc", e.target.value)} placeholder="Vehicle description..." style={{ width:"100%", background:G.white, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", resize:"vertical", minHeight:80 }} />
               </div>
               <div style={{ marginTop:16 }}>
                 <Label>Car Images ({(form.images || []).length})</Label>
@@ -1040,13 +1099,13 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:16 }}>
                 <div>
                   <Label>Status</Label>
-                  <select value={form.status} onChange={e => F("status", e.target.value)} style={{ width:"100%", background:G.bg, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border2}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", appearance:"none" }}>
+                  <select value={form.status} onChange={e => F("status", e.target.value)} style={{ width:"100%", background:G.white, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", appearance:"none" }}>
                     <option value="active">Active</option><option value="reserved">Reserved</option><option value="sold">Sold</option>
                   </select>
                 </div>
                 <div>
                   <Label>Badge</Label>
-                  <select value={form.badge || ""} onChange={e => F("badge", e.target.value)} style={{ width:"100%", background:G.bg, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border2}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", appearance:"none" }}>
+                  <select value={form.badge || ""} onChange={e => F("badge", e.target.value)} style={{ width:"100%", background:G.white, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", appearance:"none" }}>
                     <option value="">No badge</option><option value="New">New</option><option value="Hot New">Hot New</option><option value="Featured">Featured</option><option value="Reserved">Reserved</option>
                   </select>
                 </div>
