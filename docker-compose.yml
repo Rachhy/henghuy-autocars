@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: henghuy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: henghuy
+      POSTGRES_PASSWORD: henghuy_dev
+      POSTGRES_DB: henghuy
+    ports:
+      - "5433:5432"
+    volumes:
+      - henghuy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U henghuy -d henghuy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  henghuy_pgdata:
