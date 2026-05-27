@@ -197,6 +197,61 @@ app.delete('/api/bookings/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── ENQUIRIES (contact form messages) ──────────────────────────────────────
+const toEnquiry = (r) => ({
+  id: r.id,
+  firstName: r.first_name,
+  lastName: r.last_name,
+  email: r.email,
+  phone: r.phone,
+  topic: r.topic,
+  message: r.message,
+  status: r.status,
+  createdAt: r.created_at,
+});
+
+app.get('/api/enquiries', async (_req, res, next) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM enquiries ORDER BY created_at DESC');
+    res.json(rows.map(toEnquiry));
+  } catch (err) { next(err); }
+});
+
+app.post('/api/enquiries', async (req, res, next) => {
+  try {
+    const { firstName, lastName, email, phone, topic, message } = req.body || {};
+    if (!email || !message) return res.status(400).json({ error: 'Email and message are required' });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address' });
+    const { rows } = await pool.query(
+      `INSERT INTO enquiries (first_name, last_name, email, phone, topic, message)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [firstName || null, lastName || null, email, phone || null, topic || null, message]
+    );
+    res.status(201).json(toEnquiry(rows[0]));
+  } catch (err) { next(err); }
+});
+
+app.patch('/api/enquiries/:id', async (req, res, next) => {
+  try {
+    const { status } = req.body || {};
+    if (!status) return res.status(400).json({ error: 'status is required' });
+    const { rows } = await pool.query(
+      'UPDATE enquiries SET status = $1 WHERE id = $2 RETURNING *',
+      [status, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(toEnquiry(rows[0]));
+  } catch (err) { next(err); }
+});
+
+app.delete('/api/enquiries/:id', async (req, res, next) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM enquiries WHERE id = $1', [req.params.id]);
+    if (!rowCount) return res.status(404).json({ error: 'Not found' });
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 const toUser = (r) => ({ id: r.id, name: r.name, email: r.email, isAdmin: r.is_admin });
 

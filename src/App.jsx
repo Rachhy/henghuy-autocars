@@ -546,10 +546,37 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
 };
 
 // ─── CONTACT ─────────────────────────────────────────────────────────────────
+const TOPICS = ["Purchasing a Vehicle","Test Drive Request","Installment Plan Enquiry","Vehicle Trade-in / Valuation","General Enquiry"];
+
 const ContactPage = ({ setPage, showToast }) => {
   const isMobile = useIsMobile();
   const [sent, setSent] = useState(false);
-  const submit = () => { setSent(true); showToast("Enquiry Sent","We'll be in touch within 24 hours."); };
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ firstName:"", lastName:"", email:"", phone:"", topic: TOPICS[0], message:"" });
+  const F = (k,v) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.email || !form.message) {
+      showToast("Missing fields", "Email and message are required.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(api("/api/enquiries"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `Send failed (${res.status})`);
+      setSent(true);
+      showToast("Enquiry Sent","We'll be in touch within 24 hours.");
+    } catch (err) {
+      showToast("Send failed", err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <div>
       <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", minHeight: isMobile ? "auto" : "calc(100vh - 64px)" }}>
@@ -582,16 +609,16 @@ const ContactPage = ({ setPage, showToast }) => {
           ) : (
             <>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                <Input label="First Name" placeholder="Sokha" />
-                <Input label="Last Name" placeholder="Chea" />
+                <Input label="First Name" placeholder="Sokha" value={form.firstName} onChange={e => F("firstName", e.target.value)} />
+                <Input label="Last Name" placeholder="Chea" value={form.lastName} onChange={e => F("lastName", e.target.value)} />
               </div>
-              <Input label="Email" type="email" placeholder="you@email.com" />
-              <Input label="Phone" type="tel" placeholder="+855 12 345 678" />
-              <Select label="I Am Interested In">
-                {["Purchasing a Vehicle","Test Drive Request","Installment Plan Enquiry","Vehicle Trade-in / Valuation","General Enquiry"].map(o => <option key={o}>{o}</option>)}
+              <Input label="Email" type="email" placeholder="you@email.com" value={form.email} onChange={e => F("email", e.target.value)} />
+              <Input label="Phone" type="tel" placeholder="+855 12 345 678" value={form.phone} onChange={e => F("phone", e.target.value)} />
+              <Select label="I Am Interested In" value={form.topic} onChange={e => F("topic", e.target.value)}>
+                {TOPICS.map(o => <option key={o}>{o}</option>)}
               </Select>
-              <Textarea label="Your Message" placeholder="Please describe how we can assist you..." />
-              <Btn full onClick={submit}>Send Enquiry</Btn>
+              <Textarea label="Your Message" placeholder="Please describe how we can assist you..." value={form.message} onChange={e => F("message", e.target.value)} />
+              <Btn full onClick={submit} style={busy ? { opacity:0.6, pointerEvents:"none" } : {}}>{busy ? "Sending…" : "Send Enquiry"}</Btn>
             </>
           )}
         </div>
@@ -818,7 +845,7 @@ const ProfilePage = ({ user, setUser, cars, favorites, toggleFav, bookings, setP
 };
 
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
-const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveCar, apiDeleteCar, apiUpdateBookingStatus, apiDeleteBooking, apiOnline }) => {
+const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToast, apiSaveCar, apiDeleteCar, apiUpdateBookingStatus, apiDeleteBooking, apiUpdateEnquiryStatus, apiDeleteEnquiry, apiOnline }) => {
   const isMobile = useIsMobile();
   const [tab, setTab] = useState("dashboard");
   const [editId, setEditId] = useState(null);
@@ -906,7 +933,7 @@ const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveC
     }
   };
 
-  const navItems = [["dashboard","Dashboard"],["inventory","Inventory"],["form",editId?"Edit Vehicle":"Add Vehicle"],["leads","Enquiries"]];
+  const navItems = [["dashboard","Dashboard"],["inventory","Inventory"],["form",editId?"Edit Vehicle":"Add Vehicle"],["leads",`Bookings${bookings.length?` (${bookings.length})`:""}`],["messages",`Messages${enquiries.length?` (${enquiries.length})`:""}`]];
 
   return (
     <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr", minHeight: isMobile ? "auto" : "calc(100vh - 64px)" }}>
@@ -1068,6 +1095,42 @@ const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveC
             )}
           </>
         )}
+
+        {tab === "messages" && (
+          <>
+            <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:24 }}>Contact Messages ({enquiries.length})</h2>
+            {enquiries.length === 0 ? (
+              <div style={{ color:G.textMid, fontSize:13 }}>No messages yet. Customer enquiries from the Contact page will show up here.</div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                {enquiries.map(e => (
+                  <div key={e.id} style={{ background:G.white, border:`1px solid ${G.border}`, borderRadius:14, padding:"1.25rem 1.5rem" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12, marginBottom:10 }}>
+                      <div>
+                        <div style={{ fontFamily:G.serif, fontSize:"1.15rem", marginBottom:2 }}>{[e.firstName, e.lastName].filter(Boolean).join(" ") || e.email}</div>
+                        <div style={{ fontSize:12, color:G.textMid }}>
+                          <a href={`mailto:${e.email}`} style={{ color:G.textMid, textDecoration:"underline" }}>{e.email}</a>
+                          {e.phone && <> · <a href={`tel:${e.phone}`} style={{ color:G.textMid, textDecoration:"underline" }}>{e.phone}</a></>}
+                        </div>
+                        {e.topic && <div style={{ fontSize:11, color:G.textSub, marginTop:4, letterSpacing:"0.04em", textTransform:"uppercase" }}>{e.topic}</div>}
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <Tag>{e.status}</Tag>
+                        <span style={{ fontSize:11, color:G.textSub }}>{new Date(e.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize:13, color:G.text, lineHeight:1.7, padding:"12px 14px", background:G.bg, borderRadius:10, marginBottom:12, whiteSpace:"pre-wrap" }}>{e.message}</div>
+                    <div style={{ display:"flex", gap:14, fontSize:11, letterSpacing:"0.08em" }}>
+                      {e.status !== "read"     && <button onClick={() => apiUpdateEnquiryStatus(e.id, "read").then(() => showToast("Updated","Marked as read.")).catch(err => showToast("Failed", err.message))} style={{ background:"none", border:"none", color:G.textMid, cursor:"pointer" }}>Mark Read</button>}
+                      {e.status !== "replied"  && <button onClick={() => apiUpdateEnquiryStatus(e.id, "replied").then(() => showToast("Updated","Marked as replied.")).catch(err => showToast("Failed", err.message))} style={{ background:"none", border:"none", color:G.textMid, cursor:"pointer" }}>Mark Replied</button>}
+                      <button onClick={() => { if(confirm("Delete this message?")) apiDeleteEnquiry(e.id).then(() => showToast("Deleted","Message removed.")).catch(err => showToast("Failed", err.message)); }} style={{ background:"none", border:"none", color:"#c0392b", cursor:"pointer" }}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -1091,6 +1154,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [enquiries, setEnquiries] = useState([]);
   const [cars, setCars] = useState(INITIAL_CARS);
   const [toast, setToast] = useState(null);
   const [apiOnline, setApiOnline] = useState(false);
@@ -1186,6 +1250,35 @@ export default function App() {
     await fetchBookings(user);
   };
 
+  const fetchEnquiries = async (currentUser) => {
+    if (!currentUser?.isAdmin) { setEnquiries([]); return; }
+    try {
+      const res = await fetch(api("/api/enquiries"));
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      setEnquiries(await res.json());
+    } catch (err) {
+      console.warn("Enquiries fetch failed:", err.message);
+    }
+  };
+
+  useEffect(() => { fetchEnquiries(user); }, [user]);
+
+  const apiUpdateEnquiryStatus = async (id, status) => {
+    const res = await fetch(api(`/api/enquiries/${id}`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error(`Status update failed (${res.status})`);
+    await fetchEnquiries(user);
+  };
+
+  const apiDeleteEnquiry = async (id) => {
+    const res = await fetch(api(`/api/enquiries/${id}`), { method: "DELETE" });
+    if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+    await fetchEnquiries(user);
+  };
+
   const commonProps = { setPage, user, favorites, toggleFav, showToast, cars };
 
   return (
@@ -1199,7 +1292,7 @@ export default function App() {
         {page === "about"     && <AboutPage     setPage={setPage} />}
         {page === "auth"      && <AuthPage      setUser={setUser} setPage={setPage} showToast={showToast} />}
         {page === "profile"   && <ProfilePage   {...commonProps} setUser={setUser} bookings={bookings} />}
-        {page === "admin"     && <AdminPage     {...commonProps} setCars={setCars} bookings={bookings} apiSaveCar={apiSaveCar} apiDeleteCar={apiDeleteCar} apiUpdateBookingStatus={apiUpdateBookingStatus} apiDeleteBooking={apiDeleteBooking} apiOnline={apiOnline} />}
+        {page === "admin"     && <AdminPage     {...commonProps} setCars={setCars} bookings={bookings} enquiries={enquiries} apiSaveCar={apiSaveCar} apiDeleteCar={apiDeleteCar} apiUpdateBookingStatus={apiUpdateBookingStatus} apiDeleteBooking={apiDeleteBooking} apiUpdateEnquiryStatus={apiUpdateEnquiryStatus} apiDeleteEnquiry={apiDeleteEnquiry} apiOnline={apiOnline} />}
       </div>
       <Toast toast={toast} />
     </div>

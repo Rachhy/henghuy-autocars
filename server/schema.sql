@@ -54,3 +54,18 @@ CREATE TABLE IF NOT EXISTS bookings (
 CREATE INDEX IF NOT EXISTS bookings_user_idx   ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS bookings_status_idx ON bookings(status);
 CREATE INDEX IF NOT EXISTS bookings_created_idx ON bookings(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS enquiries (
+  id          SERIAL PRIMARY KEY,
+  first_name  TEXT,
+  last_name   TEXT,
+  email       TEXT        NOT NULL,
+  phone       TEXT,
+  topic       TEXT,
+  message     TEXT        NOT NULL,
+  status      TEXT        NOT NULL DEFAULT 'new',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS enquiries_status_idx  ON enquiries(status);
+CREATE INDEX IF NOT EXISTS enquiries_created_idx ON enquiries(created_at DESC);
