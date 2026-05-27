@@ -36,3 +36,21 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS users_email_idx ON users(email);
+
+CREATE TABLE IF NOT EXISTS bookings (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER     REFERENCES users(id) ON DELETE SET NULL,
+  user_name   TEXT,
+  user_email  TEXT,
+  car_id      INTEGER     REFERENCES cars(id) ON DELETE SET NULL,
+  car_name    TEXT        NOT NULL,
+  date        TEXT        NOT NULL,
+  time        TEXT        NOT NULL,
+  notes       TEXT,
+  status      TEXT        NOT NULL DEFAULT 'new',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS bookings_user_idx   ON bookings(user_id);
+CREATE INDEX IF NOT EXISTS bookings_status_idx ON bookings(status);
+CREATE INDEX IF NOT EXISTS bookings_created_idx ON bookings(created_at DESC);

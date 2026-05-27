@@ -136,6 +136,67 @@ app.post('/api/upload', upload.single('image'), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── BOOKINGS ────────────────────────────────────────────────────────────────
+const toBooking = (r) => ({
+  id: r.id,
+  userId: r.user_id,
+  userName: r.user_name,
+  userEmail: r.user_email,
+  carId: r.car_id,
+  carName: r.car_name,
+  date: r.date,
+  time: r.time,
+  notes: r.notes,
+  status: r.status,
+  createdAt: r.created_at,
+});
+
+app.get('/api/bookings', async (req, res, next) => {
+  try {
+    const { userId } = req.query;
+    const sql = userId
+      ? 'SELECT * FROM bookings WHERE user_id = $1 ORDER BY created_at DESC'
+      : 'SELECT * FROM bookings ORDER BY created_at DESC';
+    const params = userId ? [userId] : [];
+    const { rows } = await pool.query(sql, params);
+    res.json(rows.map(toBooking));
+  } catch (err) { next(err); }
+});
+
+app.post('/api/bookings', async (req, res, next) => {
+  try {
+    const { userId, userName, userEmail, carId, carName, date, time, notes } = req.body || {};
+    if (!carName || !date || !time) return res.status(400).json({ error: 'carName, date, and time are required' });
+    const { rows } = await pool.query(
+      `INSERT INTO bookings (user_id, user_name, user_email, car_id, car_name, date, time, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [userId || null, userName || null, userEmail || null, carId || null, carName, date, time, notes || null]
+    );
+    res.status(201).json(toBooking(rows[0]));
+  } catch (err) { next(err); }
+});
+
+app.patch('/api/bookings/:id', async (req, res, next) => {
+  try {
+    const { status } = req.body || {};
+    if (!status) return res.status(400).json({ error: 'status is required' });
+    const { rows } = await pool.query(
+      'UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *',
+      [status, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json(toBooking(rows[0]));
+  } catch (err) { next(err); }
+});
+
+app.delete('/api/bookings/:id', async (req, res, next) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM bookings WHERE id = $1', [req.params.id]);
+    if (!rowCount) return res.status(404).json({ error: 'Not found' });
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 const toUser = (r) => ({ id: r.id, name: r.name, email: r.email, isAdmin: r.is_admin });
 

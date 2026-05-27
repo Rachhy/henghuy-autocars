@@ -398,6 +398,8 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
   const [bookingDone, setBookingDone] = useState(false);
   const [bDate, setBDate] = useState("");
   const [bTime, setBTime] = useState("10:00 AM");
+  const [bNotes, setBNotes] = useState("");
+  const [bookingBusy, setBookingBusy] = useState(false);
   const [activeView, setActiveView] = useState(0);
   const car = cars.find(c => c.id === carId);
   if (!car) return null;
@@ -414,9 +416,27 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
         { emoji: "🛞",       label: "Wheels" },
       ];
 
-  const confirmBooking = () => {
-    addBooking({ id:Date.now(), carId:car.id, carName:`${car.brand} ${car.model}`, date:bDate||"TBD", time:bTime, status:"confirmed" });
-    setBookingDone(true);
+  const confirmBooking = async () => {
+    if (!user) { showToast("Sign in", "Please sign in first."); return; }
+    if (!bDate) { showToast("Pick a date", "Please choose a preferred date."); return; }
+    setBookingBusy(true);
+    try {
+      await addBooking({
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        carId: car.id,
+        carName: `${car.brand} ${car.model}`,
+        date: bDate,
+        time: bTime,
+        notes: bNotes || null,
+      });
+      setBookingDone(true);
+    } catch (err) {
+      showToast("Booking failed", err.message);
+    } finally {
+      setBookingBusy(false);
+    }
   };
 
   const specs = [["Engine",car.engine],["Power",car.power],["Transmission",car.transmission],["Top Speed",car.top_speed],["0–100 km/h",car.accel],["Mileage",`${car.mileage.toLocaleString()} km`],["Year",car.year],["Colour",car.color]];
@@ -497,14 +517,14 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
       </div>
 
       {/* Booking Modal */}
-      <Modal open={bookingOpen} onClose={() => { setBookingOpen(false); setBookingDone(false); }}>
+      <Modal open={bookingOpen} onClose={() => { setBookingOpen(false); setBookingDone(false); setBNotes(""); setBDate(""); }}>
         {bookingDone ? (
           <div style={{ textAlign:"center", padding:"1rem" }}>
             <div style={{ fontSize:"2.5rem", marginBottom:12 }}>✓</div>
             <div style={{ fontFamily:G.serif, fontSize:"1.5rem", marginBottom:8 }}>Booking Confirmed</div>
             <div style={{ fontSize:12, color:G.textMid, marginBottom:4 }}>{car.brand} {car.model} · {bDate || "Date TBD"} at {bTime}</div>
             <div style={{ fontSize:12, color:G.textMid, marginBottom:24 }}>Our concierge will contact you shortly.</div>
-            <Btn variant="outline" onClick={() => { setBookingOpen(false); setBookingDone(false); }}>Close</Btn>
+            <Btn variant="outline" onClick={() => { setBookingOpen(false); setBookingDone(false); setBNotes(""); setBDate(""); }}>Close</Btn>
           </div>
         ) : (
           <>
@@ -514,8 +534,8 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
             <Select label="Preferred Time" value={bTime} onChange={e => setBTime(e.target.value)}>
               {["10:00 AM","11:00 AM","1:00 PM","2:00 PM","4:00 PM"].map(t => <option key={t}>{t}</option>)}
             </Select>
-            <Textarea label="Notes (optional)" placeholder="Any specific requirements..." />
-            <Btn full onClick={confirmBooking}>Confirm Booking</Btn>
+            <Textarea label="Notes (optional)" placeholder="Any specific requirements..." value={bNotes} onChange={e => setBNotes(e.target.value)} />
+            <Btn full onClick={confirmBooking} style={bookingBusy ? { opacity:0.6, pointerEvents:"none" } : {}}>{bookingBusy ? "Submitting…" : "Confirm Booking"}</Btn>
           </>
         )}
       </Modal>
@@ -798,7 +818,7 @@ const ProfilePage = ({ user, setUser, cars, favorites, toggleFav, bookings, setP
 };
 
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
-const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveCar, apiDeleteCar, apiOnline }) => {
+const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveCar, apiDeleteCar, apiUpdateBookingStatus, apiDeleteBooking, apiOnline }) => {
   const isMobile = useIsMobile();
   const [tab, setTab] = useState("dashboard");
   const [editId, setEditId] = useState(null);
@@ -922,7 +942,9 @@ const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveC
               ))}
             </div>
             <h3 style={{ fontFamily:G.serif, fontSize:"1.3rem", fontWeight:500, color:G.text, marginBottom:16 }}>Recent Enquiries</h3>
-            <AdminTable rows={bookings.map(b=>[user.name,"Test Drive",b.carName,b.date,"New"])} />
+            {bookings.length === 0
+              ? <div style={{ color:G.textMid, fontSize:13 }}>No bookings yet.</div>
+              : <AdminTable rows={bookings.slice(0,5).map(b=>[b.userName || "—","Test Drive",b.carName,`${b.date} ${b.time}`,b.status])} />}
           </>
         )}
 
@@ -1017,8 +1039,33 @@ const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveC
 
         {tab === "leads" && (
           <>
-            <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:24 }}>Enquiries</h2>
-            <AdminTable rows={bookings.map(b=>[user.name,"Test Drive",b.carName,b.date,"New"])} />
+            <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:24 }}>Test Drive Bookings ({bookings.length})</h2>
+            {bookings.length === 0 ? (
+              <div style={{ color:G.textMid, fontSize:13 }}>No bookings yet. When customers book a test drive, they'll appear here.</div>
+            ) : (
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>{["Customer","Vehicle","Date / Time","Notes","Status","Actions"].map(h => <th key={h} style={{ fontSize:10, letterSpacing:"0.15em", textTransform:"uppercase", color:G.textSub, textAlign:"left", padding:"8px 12px", borderBottom:`1px solid ${G.border}` }}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {bookings.map(b => (
+                    <tr key={b.id} style={{ borderBottom:`1px solid ${G.border}` }}>
+                      <td style={{ padding:"10px 12px", fontSize:13 }}>
+                        <div style={{ fontWeight:500 }}>{b.userName || "—"}</div>
+                        <div style={{ fontSize:11, color:G.textSub }}>{b.userEmail || ""}</div>
+                      </td>
+                      <td style={{ padding:"10px 12px", fontSize:13 }}>{b.carName}</td>
+                      <td style={{ padding:"10px 12px", fontSize:13, color:G.textMid }}>{b.date}<br /><span style={{ fontSize:11 }}>{b.time}</span></td>
+                      <td style={{ padding:"10px 12px", fontSize:12, color:G.textMid, maxWidth:200 }}>{b.notes || <span style={{ color:G.textSub }}>—</span>}</td>
+                      <td style={{ padding:"10px 12px" }}><Tag>{b.status}</Tag></td>
+                      <td style={{ padding:"10px 12px", whiteSpace:"nowrap" }}>
+                        {b.status !== "confirmed" && <button onClick={() => apiUpdateBookingStatus(b.id, "confirmed").then(() => showToast("Updated","Marked as confirmed.")).catch(e => showToast("Failed", e.message))} style={{ background:"none", border:"none", fontSize:11, color:G.textMid, cursor:"pointer", marginRight:12, letterSpacing:"0.08em" }}>Confirm</button>}
+                        {b.status !== "completed" && <button onClick={() => apiUpdateBookingStatus(b.id, "completed").then(() => showToast("Updated","Marked as completed.")).catch(e => showToast("Failed", e.message))} style={{ background:"none", border:"none", fontSize:11, color:G.textMid, cursor:"pointer", marginRight:12, letterSpacing:"0.08em" }}>Done</button>}
+                        <button onClick={() => { if(confirm("Delete this booking?")) apiDeleteBooking(b.id).then(() => showToast("Deleted","Booking removed.")).catch(e => showToast("Failed", e.message)); }} style={{ background:"none", border:"none", fontSize:11, color:"#c0392b", cursor:"pointer", letterSpacing:"0.08em" }}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </>
         )}
       </div>
@@ -1077,6 +1124,20 @@ export default function App() {
     await fetchCars();
   };
 
+  const fetchBookings = async (currentUser) => {
+    if (!currentUser) { setBookings([]); return; }
+    try {
+      const url = currentUser.isAdmin ? "/api/bookings" : `/api/bookings?userId=${currentUser.id}`;
+      const res = await fetch(api(url));
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      setBookings(await res.json());
+    } catch (err) {
+      console.warn("Bookings fetch failed:", err.message);
+    }
+  };
+
+  useEffect(() => { fetchBookings(user); }, [user]);
+
   const setPage = (pg, id) => {
     setPage_(pg);
     if (pg === "detail" && id) setDetailId(id);
@@ -1096,7 +1157,34 @@ export default function App() {
     });
   };
 
-  const addBooking = (b) => setBookings(bs => [...bs, b]);
+  const addBooking = async (b) => {
+    const res = await fetch(api("/api/bookings"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(b),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Booking failed (${res.status})`);
+    }
+    await fetchBookings(user);
+  };
+
+  const apiUpdateBookingStatus = async (id, status) => {
+    const res = await fetch(api(`/api/bookings/${id}`), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error(`Status update failed (${res.status})`);
+    await fetchBookings(user);
+  };
+
+  const apiDeleteBooking = async (id) => {
+    const res = await fetch(api(`/api/bookings/${id}`), { method: "DELETE" });
+    if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+    await fetchBookings(user);
+  };
 
   const commonProps = { setPage, user, favorites, toggleFav, showToast, cars };
 
@@ -1111,7 +1199,7 @@ export default function App() {
         {page === "about"     && <AboutPage     setPage={setPage} />}
         {page === "auth"      && <AuthPage      setUser={setUser} setPage={setPage} showToast={showToast} />}
         {page === "profile"   && <ProfilePage   {...commonProps} setUser={setUser} bookings={bookings} />}
-        {page === "admin"     && <AdminPage     {...commonProps} setCars={setCars} bookings={bookings} apiSaveCar={apiSaveCar} apiDeleteCar={apiDeleteCar} apiOnline={apiOnline} />}
+        {page === "admin"     && <AdminPage     {...commonProps} setCars={setCars} bookings={bookings} apiSaveCar={apiSaveCar} apiDeleteCar={apiDeleteCar} apiUpdateBookingStatus={apiUpdateBookingStatus} apiDeleteBooking={apiDeleteBooking} apiOnline={apiOnline} />}
       </div>
       <Toast toast={toast} />
     </div>
