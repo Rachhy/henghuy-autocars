@@ -171,6 +171,17 @@ app.post('/api/auth/register', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── Serve the React build (production) ─────────────────────────────────────
+const distDir = path.join(__dirname, '..', 'dist');
+if (fs.existsSync(distDir)) {
+  console.log(`🌐 Serving React build from ${distDir}`);
+  app.use(express.static(distDir));
+  // SPA fallback — any non-API GET returns index.html so client-side routing works.
+  app.get(/^\/(?!api|uploads).*/, (_req, res) => {
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+}
+
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: err.message || 'Internal error' });
