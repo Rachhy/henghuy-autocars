@@ -5,6 +5,18 @@ import { useState, useEffect } from "react";
 const API_URL = import.meta.env.VITE_API_URL || "";
 const api = (path) => `${API_URL}${path}`;
 
+// Breakpoint for "mobile" — under this width, we stack 2-col layouts into 1 col.
+const MOBILE_BREAKPOINT = 768;
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return isMobile;
+};
+
 // ─── DATA ───────────────────────────────────────────────────────────────────
 const INITIAL_CARS = [
   { id:1, brand:"Rolls-Royce", model:"Cullinan", year:2023, price:750000, mileage:3500, color:"Black", engine:"6.75L Twin-Turbo V12", power:"563 hp", transmission:"8-speed auto", top_speed:"250 km/h", accel:"5.2s", status:"active", featured:true, badge:"Hot New", emoji:"⚫", desc:"The world's most extraordinary SUV. The Cullinan combines all-terrain capability with Rolls-Royce's signature 'magic carpet ride' — the ultimate statement of luxury for the modern explorer." },
@@ -172,16 +184,19 @@ const CarCard = ({ car, onView, onFav, isFav }) => (
 
 // ─── NAV ─────────────────────────────────────────────────────────────────────
 const Nav = ({ page, setPage, user, favorites }) => {
+  const isMobile = useIsMobile();
   const links = [
-    { label:"Collection", page:"inventory" },
+    { label: isMobile ? "Cars" : "Collection", page:"inventory" },
     { label:"About", page:"about" },
     { label:"Contact", page:"contact" },
   ];
-  const navBtn = (active) => ({ background: active ? G.text : "transparent", border:"none", fontSize:13, color: active ? G.white : G.text, padding:"8px 16px", fontWeight:500, cursor:"pointer", borderRadius:G.radiusPill, transition:"background 0.15s, color 0.15s" });
+  const navBtn = (active) => ({ background: active ? G.text : "transparent", border:"none", fontSize: isMobile ? 11 : 13, color: active ? G.white : G.text, padding: isMobile ? "6px 9px" : "8px 16px", fontWeight:500, cursor:"pointer", borderRadius:G.radiusPill, transition:"background 0.15s, color 0.15s", whiteSpace:"nowrap" });
   return (
-    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, background:"rgba(248, 248, 243, 0.85)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:`1px solid ${G.border}`, padding:"0 2.5rem", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-      <div onClick={() => setPage("home")} style={{ fontFamily:G.serif, fontSize:"1.5rem", fontWeight:500, letterSpacing:"-0.01em", cursor:"pointer" }}>HengHuy <span style={{ color:G.accent }}>AutoCars</span></div>
-      <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, background:"rgba(248, 248, 243, 0.85)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", borderBottom:`1px solid ${G.border}`, padding: isMobile ? "0 1rem" : "0 2.5rem", height:64, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div onClick={() => setPage("home")} style={{ fontFamily:G.serif, fontSize: isMobile ? "1.1rem" : "1.5rem", fontWeight:500, letterSpacing:"-0.01em", cursor:"pointer", whiteSpace:"nowrap" }}>
+        {isMobile ? "HengHuy" : <>HengHuy <span style={{ color:G.accent }}>AutoCars</span></>}
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap: isMobile ? 2 : 4 }}>
         {links.map(l => (
           <button key={l.page} onClick={() => setPage(l.page)} style={navBtn(page === l.page)}>
             {l.label}
@@ -190,12 +205,12 @@ const Nav = ({ page, setPage, user, favorites }) => {
         {user ? (
           <>
             <button onClick={() => setPage("profile")} style={navBtn(page === "profile")}>
-              Account {favorites.length > 0 && <span style={{ background: page==="profile"?G.white:G.text, color: page==="profile"?G.text:G.white, fontSize:10, fontWeight:600, padding:"2px 7px", marginLeft:6, borderRadius:999 }}>{favorites.length}</span>}
+              Account{!isMobile && favorites.length > 0 && <span style={{ background: page==="profile"?G.white:G.text, color: page==="profile"?G.text:G.white, fontSize:10, fontWeight:600, padding:"2px 7px", marginLeft:6, borderRadius:999 }}>{favorites.length}</span>}
             </button>
             {user.isAdmin && <button onClick={() => setPage("admin")} style={navBtn(page === "admin")}>Admin</button>}
           </>
         ) : (
-          <Btn variant="outline" onClick={() => setPage("auth")} style={{ fontSize:13, padding:"8px 20px", marginLeft:8 }}>Sign In</Btn>
+          <Btn variant="outline" onClick={() => setPage("auth")} style={{ fontSize: isMobile ? 11 : 13, padding: isMobile ? "6px 12px" : "8px 20px", marginLeft: isMobile ? 4 : 8 }}>Sign In</Btn>
         )}
       </div>
     </nav>
@@ -203,10 +218,12 @@ const Nav = ({ page, setPage, user, favorites }) => {
 };
 
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
-const Footer = ({ setPage }) => (
-  <footer style={{ background:G.white, borderTop:`1px solid ${G.border}`, padding:"3rem 2.5rem 2rem", marginTop:60 }}>
-    <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:"2rem", maxWidth:1100, margin:"0 auto", paddingBottom:"2rem" }}>
-      <div>
+const Footer = ({ setPage }) => {
+  const isMobile = useIsMobile();
+  return (
+  <footer style={{ background:G.white, borderTop:`1px solid ${G.border}`, padding: isMobile ? "2.5rem 1.25rem 1.5rem" : "3rem 2.5rem 2rem", marginTop:60 }}>
+    <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 1fr 1fr 1fr", gap: isMobile ? "1.5rem" : "2rem", maxWidth:1100, margin:"0 auto", paddingBottom:"2rem" }}>
+      <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
         <div style={{ fontFamily:G.serif, fontSize:"1.2rem", marginBottom:8 }}>HengHuy AutoCars</div>
         <div style={{ fontSize:12, color:G.textMid, lineHeight:1.9, maxWidth:240 }}>Cambodia's trusted dealership for luxury &amp; premium vehicles. Buy &amp; sell with confidence in Phnom Penh.</div>
       </div>
@@ -218,12 +235,13 @@ const Footer = ({ setPage }) => (
       ))}
     </div>
     <Divider />
-    <div style={{ maxWidth:1100, margin:"1.25rem auto 0", display:"flex", justifyContent:"space-between", fontSize:11, color:G.textSub }}>
+    <div style={{ maxWidth:1100, margin:"1.25rem auto 0", display:"flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 6 : 0, justifyContent:"space-between", fontSize:11, color:G.textSub }}>
       <span>© 2026 HengHuy AutoCars. All rights reserved.</span>
       <span>Phnom Penh, Cambodia</span>
     </div>
   </footer>
-);
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGES
@@ -231,12 +249,13 @@ const Footer = ({ setPage }) => (
 
 // ─── HOME ────────────────────────────────────────────────────────────────────
 const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
+  const isMobile = useIsMobile();
   const featured = cars.filter(c => c.featured && c.status === "active");
   return (
     <div>
       {/* Hero */}
-      <section style={{ minHeight:"90vh", display:"flex", alignItems:"center", padding:"0 2.5rem", borderBottom:`1px solid ${G.border}`, background:G.white }}>
-        <div style={{ maxWidth:1100, margin:"0 auto", width:"100%", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"4rem", alignItems:"center" }}>
+      <section style={{ minHeight: isMobile ? "auto" : "90vh", display:"flex", alignItems:"center", padding: isMobile ? "3rem 1.25rem" : "0 2.5rem", borderBottom:`1px solid ${G.border}`, background:G.white }}>
+        <div style={{ maxWidth:1100, margin:"0 auto", width:"100%", display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "2.5rem" : "4rem", alignItems:"center" }}>
           <div className="fade-up">
             <Tag style={{ marginBottom:20 }}>Phnom Penh · Cambodia</Tag>
             <h1 style={{ fontFamily:G.serif, fontSize:"clamp(2.5rem,5vw,4rem)", fontWeight:500, color:G.text, lineHeight:1.1, marginBottom:20 }}>
@@ -263,31 +282,31 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
       </section>
 
       {/* Brands */}
-      <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding:"1rem 2.5rem", display:"flex", gap:"2rem", alignItems:"center", overflowX:"auto" }}>
+      <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "1rem 1.25rem" : "1rem 2.5rem", display:"flex", gap: isMobile ? "1.25rem" : "2rem", alignItems:"center", overflowX:"auto" }}>
         <Label style={{ marginBottom:0, whiteSpace:"nowrap" }}>Our Brands</Label>
         {BRANDS.map(b => <span key={b} style={{ fontSize:12, color:G.textMid, whiteSpace:"nowrap", cursor:"pointer", letterSpacing:"0.05em" }} onClick={() => setPage("inventory")}>{b}</span>)}
       </section>
 
       {/* Featured */}
-      <section style={{ maxWidth:1100, margin:"0 auto", padding:"4rem 2.5rem" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:"2rem" }}>
+      <section style={{ maxWidth:1100, margin:"0 auto", padding: isMobile ? "3rem 1.25rem" : "4rem 2.5rem" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:"2rem", flexWrap:"wrap", gap:12 }}>
           <div>
             <Label>Curated Selection</Label>
-            <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text }}>Featured <em>Automobiles</em></h2>
+            <h2 style={{ fontFamily:G.serif, fontSize: isMobile ? "1.6rem" : "2rem", fontWeight:500, color:G.text }}>Featured <em>Automobiles</em></h2>
           </div>
           <span onClick={() => setPage("inventory")} style={{ fontSize:12, color:G.textMid, textDecoration:"underline", cursor:"pointer" }}>View all →</span>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:24 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: isMobile ? 18 : 24 }}>
           {featured.map(car => <CarCard key={car.id} car={car} onView={id => setPage("detail", id)} isFav={favorites.includes(car.id)} onFav={id => { if(!user){showToast("Sign in","Please sign in to save favourites.");return;} toggleFav(id); }} />)}
         </div>
       </section>
 
       {/* Why us */}
-      <section style={{ background:G.white, borderTop:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, padding:"4rem 2.5rem" }}>
+      <section style={{ background:G.white, borderTop:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "3rem 1.25rem" : "4rem 2.5rem" }}>
         <div style={{ maxWidth:1100, margin:"0 auto" }}>
           <Label style={{ marginBottom:8 }}>Why HengHuy</Label>
-          <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:"2.5rem" }}>The HengHuy <em>Difference</em></h2>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, background:G.border }}>
+          <h2 style={{ fontFamily:G.serif, fontSize: isMobile ? "1.6rem" : "2rem", fontWeight:500, color:G.text, marginBottom: isMobile ? "1.75rem" : "2.5rem" }}>The HengHuy <em>Difference</em></h2>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap:0, background:G.border }}>
             {[["Free Accessories","Complimentary accessories on every purchase over $20,000"],["30-Day Return","Drive with confidence — return within 30 days if not satisfied"],["100% Installment","Flexible monthly installment plans on every vehicle in stock"],["24/7 Support","Our team is on call around the clock — 092 9999 89 anytime"]].map(([title,desc]) => (
               <div key={title} style={{ background:G.white, padding:"2rem", borderBottom:"none" }}>
                 <div style={{ fontFamily:G.serif, fontSize:"1.1rem", marginBottom:8 }}>{title}</div>
@@ -299,9 +318,9 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
       </section>
 
       {/* CTA */}
-      <section style={{ padding:"5rem 2.5rem", textAlign:"center" }}>
+      <section style={{ padding: isMobile ? "3.5rem 1.25rem" : "5rem 2.5rem", textAlign:"center" }}>
         <Label style={{ marginBottom:12 }}>Private Consultation</Label>
-        <h2 style={{ fontFamily:G.serif, fontSize:"2.5rem", fontWeight:500, color:G.text, marginBottom:12 }}>Ready to Find Your <em>Perfect Car?</em></h2>
+        <h2 style={{ fontFamily:G.serif, fontSize: isMobile ? "1.8rem" : "2.5rem", fontWeight:500, color:G.text, marginBottom:12 }}>Ready to Find Your <em>Perfect Car?</em></h2>
         <p style={{ color:G.textMid, fontSize:13, maxWidth:440, margin:"0 auto 28px" }}>Visit our Phnom Penh showroom or call 092 9999 89 — our team is ready to help you find the right car today.</p>
         <Btn onClick={() => setPage("contact")}>Visit the Showroom</Btn>
       </section>
@@ -313,6 +332,7 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────────
 const InventoryPage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
+  const isMobile = useIsMobile();
   const [filters, setFilters] = useState({ brand:"", minPrice:"", maxPrice:"", year:"", sort:"featured" });
   const F = (k,v) => setFilters(f => ({ ...f, [k]:v }));
 
@@ -329,9 +349,9 @@ const InventoryPage = ({ cars, setPage, favorites, toggleFav, showToast, user })
   const sel = { background:G.white, border:`1px solid ${G.border}`, color:G.text, padding:"8px 12px", fontSize:12, outline:"none", appearance:"none", width:"100%" };
 
   return (
-    <div style={{ maxWidth:1200, margin:"0 auto", padding:"2rem 2.5rem" }}>
+    <div style={{ maxWidth:1200, margin:"0 auto", padding: isMobile ? "1.5rem 1.25rem" : "2rem 2.5rem" }}>
       <Label>Our Collection</Label>
-      <h1 style={{ fontFamily:G.serif, fontSize:"2.5rem", fontWeight:500, color:G.text, marginBottom:"2rem" }}>Available <em style={{ color:G.text }}>Automobiles</em></h1>
+      <h1 style={{ fontFamily:G.serif, fontSize: isMobile ? "1.8rem" : "2.5rem", fontWeight:500, color:G.text, marginBottom: isMobile ? "1.25rem" : "2rem" }}>Available <em style={{ color:G.text }}>Automobiles</em></h1>
 
       {/* Filters */}
       <div style={{ background:G.white, border:`1px solid ${G.border}`, padding:"1.25rem 1.5rem", marginBottom:"2rem", display:"flex", flexWrap:"wrap", gap:"1rem", alignItems:"flex-end" }}>
@@ -360,7 +380,7 @@ const InventoryPage = ({ cars, setPage, favorites, toggleFav, showToast, user })
 
       {/* Grid */}
       {filtered.length ? (
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:24 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: isMobile ? 18 : 24 }}>
           {filtered.map(car => <CarCard key={car.id} car={car} onView={id => setPage("detail", id)} isFav={favorites.includes(car.id)} onFav={id => { if(!user){showToast("Sign in","Please sign in to save favourites.");return;} toggleFav(id); }} />)}
         </div>
       ) : (
@@ -373,6 +393,7 @@ const InventoryPage = ({ cars, setPage, favorites, toggleFav, showToast, user })
 
 // ─── DETAIL ──────────────────────────────────────────────────────────────────
 const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToast, addBooking }) => {
+  const isMobile = useIsMobile();
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingDone, setBookingDone] = useState(false);
   const [bDate, setBDate] = useState("");
@@ -407,9 +428,9 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
         <button onClick={() => setPage("inventory")} style={{ background:"none", border:"none", fontSize:12, letterSpacing:"0.1em", textTransform:"uppercase", color:G.textMid, cursor:"pointer" }}>← Back to Collection</button>
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 420px", minHeight:"calc(100vh - 120px)" }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 420px", minHeight: isMobile ? "auto" : "calc(100vh - 120px)" }}>
         {/* Gallery */}
-        <div style={{ background:G.bg2, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"10rem", position:"relative", overflow:"hidden", borderRight:`1px solid ${G.border}` }}>
+        <div style={{ background:G.bg2, display:"flex", alignItems:"center", justifyContent:"center", fontSize: isMobile ? "5rem" : "10rem", position:"relative", overflow:"hidden", borderRight: isMobile ? "none" : `1px solid ${G.border}`, borderBottom: isMobile ? `1px solid ${G.border}` : "none", minHeight: isMobile ? 280 : "auto" }}>
           {views[activeView].url
             ? <img key={activeView} className="fade-in" src={views[activeView].url} alt={`${car.brand} ${car.model}`} style={{ maxWidth:"100%", maxHeight:"100%", width:"auto", height:"auto", objectFit:"contain", display:"block" }} />
             : <span key={activeView} className="fade-in">{views[activeView].emoji}</span>}
@@ -441,14 +462,14 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
         </div>
 
         {/* Info */}
-        <div style={{ padding:"2.5rem", overflowY:"auto", background:G.white, display:"flex", flexDirection:"column", gap:"1.5rem" }}>
+        <div style={{ padding: isMobile ? "1.75rem 1.25rem" : "2.5rem", overflowY:"auto", background:G.white, display:"flex", flexDirection:"column", gap:"1.5rem" }}>
           <div>
             <Tag style={{ marginBottom:10 }}>{car.brand}</Tag>
-            <div style={{ fontFamily:G.serif, fontSize:"2.2rem", fontWeight:500, color:G.text, lineHeight:1.1, marginBottom:4 }}>{car.model}</div>
+            <div style={{ fontFamily:G.serif, fontSize: isMobile ? "1.75rem" : "2.2rem", fontWeight:500, color:G.text, lineHeight:1.1, marginBottom:4 }}>{car.model}</div>
             <div style={{ fontSize:12, color:G.textSub }}>{car.year} · {car.color}</div>
           </div>
 
-          <div style={{ fontFamily:G.serif, fontSize:"2rem" }}>${car.price.toLocaleString()}</div>
+          <div style={{ fontFamily:G.serif, fontSize: isMobile ? "1.7rem" : "2rem" }}>${car.price.toLocaleString()}</div>
 
           <Divider />
 
@@ -506,13 +527,14 @@ const DetailPage = ({ carId, cars, setPage, favorites, toggleFav, user, showToas
 
 // ─── CONTACT ─────────────────────────────────────────────────────────────────
 const ContactPage = ({ setPage, showToast }) => {
+  const isMobile = useIsMobile();
   const [sent, setSent] = useState(false);
   const submit = () => { setSent(true); showToast("Enquiry Sent","We'll be in touch within 24 hours."); };
   return (
     <div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", minHeight:"calc(100vh - 64px)" }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", minHeight: isMobile ? "auto" : "calc(100vh - 64px)" }}>
         {/* Left */}
-        <div style={{ background:G.white, padding:"4rem 3rem", borderRight:`1px solid ${G.border}`, display:"flex", flexDirection:"column", justifyContent:"center" }}>
+        <div style={{ background:G.white, padding: isMobile ? "3rem 1.25rem" : "4rem 3rem", borderRight: isMobile ? "none" : `1px solid ${G.border}`, borderBottom: isMobile ? `1px solid ${G.border}` : "none", display:"flex", flexDirection:"column", justifyContent:"center" }}>
           <Label style={{ marginBottom:12 }}>Get in Touch</Label>
           <h1 style={{ fontFamily:G.serif, fontSize:"2.5rem", fontWeight:500, color:G.text, marginBottom:16 }}>We're Here<br />to <em>Assist You</em></h1>
           <p style={{ color:G.textMid, fontSize:13, lineHeight:1.9, marginBottom:"2.5rem", maxWidth:380 }}>Whether you'd like a quote, want to arrange a viewing, or need help with financing — our team replies within 24 hours, 7 days a week.</p>
@@ -528,9 +550,9 @@ const ContactPage = ({ setPage, showToast }) => {
         </div>
 
         {/* Right - Form */}
-        <div style={{ background:G.bg, padding:"4rem 3rem", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+        <div style={{ background:G.bg, padding: isMobile ? "3rem 1.25rem" : "4rem 3rem", display:"flex", flexDirection:"column", justifyContent:"center" }}>
           <Label style={{ marginBottom:12 }}>Send a Message</Label>
-          <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:"1.5rem" }}>Private Enquiry</h2>
+          <h2 style={{ fontFamily:G.serif, fontSize: isMobile ? "1.6rem" : "2rem", fontWeight:500, color:G.text, marginBottom:"1.5rem" }}>Private Enquiry</h2>
           {sent ? (
             <div style={{ textAlign:"center", padding:"2rem 0" }}>
               <div style={{ fontSize:"2rem", marginBottom:12 }}>✓</div>
@@ -560,19 +582,21 @@ const ContactPage = ({ setPage, showToast }) => {
 };
 
 // ─── ABOUT ───────────────────────────────────────────────────────────────────
-const AboutPage = ({ setPage }) => (
+const AboutPage = ({ setPage }) => {
+  const isMobile = useIsMobile();
+  return (
   <div>
     {/* Hero */}
-    <section style={{ background:G.white, padding:"5rem 2.5rem 4rem", borderBottom:`1px solid ${G.border}` }}>
+    <section style={{ background:G.white, padding: isMobile ? "3.5rem 1.25rem 3rem" : "5rem 2.5rem 4rem", borderBottom:`1px solid ${G.border}` }}>
       <div style={{ maxWidth:1100, margin:"0 auto" }}>
         <Label style={{ marginBottom:12 }}>About HengHuy AutoCars</Label>
-        <h1 style={{ fontFamily:G.serif, fontSize:"clamp(2.5rem,6vw,5rem)", fontWeight:500, color:G.text, maxWidth:700, lineHeight:1.1, marginBottom:20 }}>Cambodia's Trusted <em style={{ color:G.text }}>Auto Destination</em></h1>
+        <h1 style={{ fontFamily:G.serif, fontSize: isMobile ? "2rem" : "clamp(2.5rem,6vw,5rem)", fontWeight:500, color:G.text, maxWidth:700, lineHeight:1.1, marginBottom:20 }}>Cambodia's Trusted <em style={{ color:G.text }}>Auto Destination</em></h1>
         <p style={{ color:G.textMid, maxWidth:480, fontSize:13, lineHeight:1.9 }}>From Toyota to Rolls-Royce, HengHuy AutoCars has served Phnom Penh's most discerning buyers with honest pricing, full inspections, and the easiest installment plans in the country.</p>
       </div>
     </section>
 
     {/* Story + Timeline */}
-    <section style={{ maxWidth:1100, margin:"0 auto", padding:"4rem 2.5rem", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"4rem" }}>
+    <section style={{ maxWidth:1100, margin:"0 auto", padding: isMobile ? "3rem 1.25rem" : "4rem 2.5rem", display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "2.5rem" : "4rem" }}>
       <div>
         <Label style={{ marginBottom:12 }}>Our Story</Label>
         <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:16 }}>Built on <em style={{ color:G.text }}>Trust</em></h2>
@@ -591,10 +615,10 @@ const AboutPage = ({ setPage }) => (
     </section>
 
     {/* Values */}
-    <section style={{ background:G.white, borderTop:`1px solid ${G.border}`, padding:"4rem 2.5rem" }}>
+    <section style={{ background:G.white, borderTop:`1px solid ${G.border}`, padding: isMobile ? "3rem 1.25rem" : "4rem 2.5rem" }}>
       <div style={{ maxWidth:1100, margin:"0 auto" }}>
         <Label style={{ marginBottom:12 }}>Our Values</Label>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, background:G.border, marginTop:24 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap:1, background:G.border, marginTop:24 }}>
           {[["01","Integrity","We believe in complete transparency. Every vehicle comes with a full service history and an independent inspection report."],["02","Excellence","Only the finest examples make it into our collection. Our standards are uncompromising — as they should be."],["03","Discretion","Our clients value their privacy. Every enquiry and transaction is handled with the utmost confidentiality."]].map(([n,title,desc]) => (
             <div key={n} style={{ background:G.white, padding:"2rem", borderTop:`3px solid ${G.text}` }}>
               <div style={{ fontFamily:G.serif, fontSize:"2.5rem", color:G.border2, marginBottom:12 }}>{n}</div>
@@ -607,10 +631,12 @@ const AboutPage = ({ setPage }) => (
     </section>
     <Footer setPage={setPage} />
   </div>
-);
+  );
+};
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 const AuthPage = ({ setUser, setPage, showToast }) => {
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState("login");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -649,8 +675,9 @@ const AuthPage = ({ setUser, setPage, showToast }) => {
   };
 
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", minHeight:"calc(100vh - 64px)" }}>
-      {/* Left */}
+    <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", minHeight: isMobile ? "auto" : "calc(100vh - 64px)" }}>
+      {/* Left — hidden on mobile to skip straight to the form */}
+      {!isMobile && (
       <div style={{ background:G.white, borderRight:`1px solid ${G.border}`, padding:"4rem 3rem", display:"flex", flexDirection:"column", justifyContent:"center" }}>
         <Label style={{ marginBottom:12 }}>Member Benefits</Label>
         <h1 style={{ fontFamily:G.serif, fontSize:"2.5rem", fontWeight:500, color:G.text, marginBottom:20 }}>Your Private <em>Collection</em></h1>
@@ -661,9 +688,10 @@ const AuthPage = ({ setUser, setPage, showToast }) => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Right */}
-      <div style={{ background:G.bg, padding:"4rem 3rem", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+      <div style={{ background:G.bg, padding: isMobile ? "3rem 1.25rem" : "4rem 3rem", display:"flex", flexDirection:"column", justifyContent:"center" }}>
         {/* Tabs */}
         <div style={{ display:"flex", gap:0, marginBottom:28, borderBottom:`1px solid ${G.border}` }}>
           {[["login","Sign In"],["register","Create Account"]].map(([t,l]) => (
@@ -694,6 +722,7 @@ const AuthPage = ({ setUser, setPage, showToast }) => {
 
 // ─── PROFILE ─────────────────────────────────────────────────────────────────
 const ProfilePage = ({ user, setUser, cars, favorites, toggleFav, bookings, setPage, showToast }) => {
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState("favourites");
   if (!user) return <AuthPage setUser={() => {}} setPage={setPage} showToast={showToast} />;
   const favCars = cars.filter(c => favorites.includes(c.id));
@@ -701,22 +730,31 @@ const ProfilePage = ({ user, setUser, cars, favorites, toggleFav, bookings, setP
   const tabs = [["favourites",`Favourites (${favCars.length})`],["bookings",`Test Drives (${bookings.length})`],["settings","Settings"]];
 
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"260px 1fr", minHeight:"calc(100vh - 64px)" }}>
-      {/* Sidebar */}
-      <div style={{ background:G.white, borderRight:`1px solid ${G.border}`, padding:"2rem" }}>
-        <div style={{ width:56, height:56, background:G.bg2, border:`1px solid ${G.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:G.serif, fontSize:"1.5rem", marginBottom:12 }}>{user.name.charAt(0)}</div>
-        <div style={{ fontFamily:G.serif, fontSize:"1.2rem" }}>{user.name}</div>
-        <div style={{ fontSize:12, color:G.textSub, marginBottom:24 }}>{user.email}</div>
-        <Divider style={{ marginBottom:16 }} />
-        {tabs.map(([t,l]) => (
-          <button key={t} onClick={() => setTab(t)} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", borderLeft: tab===t ? `2px solid ${G.text}` : "2px solid transparent", padding:"8px 12px", fontSize:12, letterSpacing:"0.08em", cursor:"pointer", color: tab===t ? G.text : G.textMid, marginBottom:4 }}>{l}</button>
-        ))}
-        <Divider style={{ margin:"16px 0" }} />
-        <button onClick={() => { setUser(null); setPage("home"); }} style={{ background:"none", border:"none", fontSize:12, color:G.textSub, cursor:"pointer", letterSpacing:"0.08em" }}>Sign Out →</button>
+    <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "260px 1fr", minHeight: isMobile ? "auto" : "calc(100vh - 64px)" }}>
+      {/* Sidebar — flat top bar on mobile */}
+      <div style={{ background:G.white, borderRight: isMobile ? "none" : `1px solid ${G.border}`, borderBottom: isMobile ? `1px solid ${G.border}` : "none", padding: isMobile ? "1.25rem" : "2rem" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom: isMobile ? 16 : 0 }}>
+          <div style={{ width:48, height:48, background:G.bg2, border:`1px solid ${G.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:G.serif, fontSize:"1.3rem", flexShrink:0 }}>{user.name.charAt(0)}</div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontFamily:G.serif, fontSize:"1.1rem" }}>{user.name}</div>
+            <div style={{ fontSize:11, color:G.textSub, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user.email}</div>
+          </div>
+          {isMobile && <button onClick={() => { setUser(null); setPage("home"); }} style={{ background:"none", border:"none", fontSize:12, color:G.textSub, cursor:"pointer" }}>Sign Out →</button>}
+        </div>
+        {!isMobile && <Divider style={{ margin:"16px 0" }} />}
+        <div style={{ display: isMobile ? "flex" : "block", gap:8, overflowX: isMobile ? "auto" : "visible" }}>
+          {tabs.map(([t,l]) => (
+            <button key={t} onClick={() => setTab(t)} style={{ display:"block", width: isMobile ? "auto" : "100%", textAlign:"left", background: isMobile && tab===t ? G.bg2 : "none", border:"none", borderLeft: !isMobile && tab===t ? `2px solid ${G.text}` : (isMobile ? "none" : "2px solid transparent"), borderRadius: isMobile ? G.radiusPill : 0, padding: isMobile ? "8px 14px" : "8px 12px", fontSize:12, fontWeight: tab===t ? 600 : 400, whiteSpace:"nowrap", letterSpacing:"0.04em", cursor:"pointer", color: tab===t ? G.text : G.textMid, marginBottom: isMobile ? 0 : 4 }}>{l}</button>
+          ))}
+        </div>
+        {!isMobile && <>
+          <Divider style={{ margin:"16px 0" }} />
+          <button onClick={() => { setUser(null); setPage("home"); }} style={{ background:"none", border:"none", fontSize:12, color:G.textSub, cursor:"pointer", letterSpacing:"0.08em" }}>Sign Out →</button>
+        </>}
       </div>
 
       {/* Main */}
-      <div style={{ padding:"2.5rem 3rem" }}>
+      <div style={{ padding: isMobile ? "1.75rem 1.25rem" : "2.5rem 3rem" }}>
         {tab === "favourites" && (
           <>
             <h2 style={{ fontFamily:G.serif, fontSize:"1.8rem", fontWeight:500, color:G.text, marginBottom:"1.5rem" }}>Saved <em>Favourites</em></h2>
@@ -761,6 +799,7 @@ const ProfilePage = ({ user, setUser, cars, favorites, toggleFav, bookings, setP
 
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
 const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveCar, apiDeleteCar, apiOnline }) => {
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState("dashboard");
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -850,17 +889,24 @@ const AdminPage = ({ user, cars, setCars, bookings, setPage, showToast, apiSaveC
   const navItems = [["dashboard","Dashboard"],["inventory","Inventory"],["form",editId?"Edit Vehicle":"Add Vehicle"],["leads","Enquiries"]];
 
   return (
-    <div style={{ display:"grid", gridTemplateColumns:"220px 1fr", minHeight:"calc(100vh - 64px)" }}>
-      <div style={{ background:G.white, borderRight:`1px solid ${G.border}`, padding:"2rem" }}>
-        <Label style={{ marginBottom:16 }}>Admin Panel</Label>
-        {navItems.map(([t,l]) => (
-          <button key={t} onClick={() => setTab(t)} style={{ display:"block", width:"100%", textAlign:"left", background:"none", border:"none", borderLeft: tab===t ? `2px solid ${G.text}` : "2px solid transparent", padding:"8px 12px", fontSize:12, letterSpacing:"0.08em", cursor:"pointer", color: tab===t ? G.text : G.textMid, marginBottom:4 }}>{l}</button>
-        ))}
-        <Divider style={{ margin:"16px 0" }} />
-        <button onClick={() => setPage("home")} style={{ background:"none", border:"none", fontSize:12, color:G.textSub, cursor:"pointer" }}>← Back to Site</button>
+    <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr", minHeight: isMobile ? "auto" : "calc(100vh - 64px)" }}>
+      <div style={{ background:G.white, borderRight: isMobile ? "none" : `1px solid ${G.border}`, borderBottom: isMobile ? `1px solid ${G.border}` : "none", padding: isMobile ? "1rem 1.25rem" : "2rem" }}>
+        <div style={{ display: isMobile ? "flex" : "block", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom: isMobile ? 12 : 0 }}>
+          <Label style={{ marginBottom: isMobile ? 0 : 16 }}>Admin Panel</Label>
+          {isMobile && <button onClick={() => setPage("home")} style={{ background:"none", border:"none", fontSize:12, color:G.textSub, cursor:"pointer", whiteSpace:"nowrap" }}>← Back to Site</button>}
+        </div>
+        <div style={{ display: isMobile ? "flex" : "block", gap:8, overflowX: isMobile ? "auto" : "visible" }}>
+          {navItems.map(([t,l]) => (
+            <button key={t} onClick={() => setTab(t)} style={{ display:"block", width: isMobile ? "auto" : "100%", textAlign:"left", background: isMobile && tab===t ? G.bg2 : "none", border:"none", borderLeft: !isMobile && tab===t ? `2px solid ${G.text}` : (isMobile ? "none" : "2px solid transparent"), borderRadius: isMobile ? G.radiusPill : 0, padding: isMobile ? "8px 14px" : "8px 12px", fontSize:12, fontWeight: tab===t ? 600 : 400, whiteSpace:"nowrap", letterSpacing:"0.04em", cursor:"pointer", color: tab===t ? G.text : G.textMid, marginBottom: isMobile ? 0 : 4 }}>{l}</button>
+          ))}
+        </div>
+        {!isMobile && <>
+          <Divider style={{ margin:"16px 0" }} />
+          <button onClick={() => setPage("home")} style={{ background:"none", border:"none", fontSize:12, color:G.textSub, cursor:"pointer" }}>← Back to Site</button>
+        </>}
       </div>
 
-      <div style={{ padding:"2.5rem 3rem" }}>
+      <div style={{ padding: isMobile ? "1.75rem 1.25rem" : "2.5rem 3rem", overflowX: isMobile ? "auto" : "visible" }}>
         {tab === "dashboard" && (
           <>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
