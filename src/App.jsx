@@ -1129,10 +1129,10 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
         )}
 
         {tab === "form" && (
-          <>
-            <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:24 }}>{editId ? "Edit Vehicle" : "Add Vehicle"}</h2>
-            <div style={{ background:G.white, border:`1px solid ${G.border}`, padding:"2rem", maxWidth:700 }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+          <div style={{ maxWidth:700, margin:"0 auto" }}>
+            <h2 style={{ fontFamily:G.serif, fontSize:"2rem", fontWeight:500, color:G.text, marginBottom:24, textAlign: isMobile ? "left" : "center" }}>{editId ? "Edit Vehicle" : "Add Vehicle"}</h2>
+            <div style={{ background:G.white, border:`1px solid ${G.border}`, padding: isMobile ? "1.5rem 1.25rem" : "2rem", borderRadius:G.radiusLg }}>
+              <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:16 }}>
                 {[["Brand","brand","Toyota"],["Model","model","Land Cruiser VXR"],["Year","year","2023"],["Price ($)","price","180000"],["Mileage (km)","mileage","5000"],["Color","color","Pearl White"],["Engine","engine","3.5L Twin-Turbo V6"],["Power","power","409 hp"],["Transmission","transmission","10-speed auto"],["Top Speed","top_speed","210 km/h"],["0–100 km/h","accel","6.9s"]].map(([label,key,placeholder]) => (
                   <div key={key}>
                     <Label>{label}</Label>
@@ -1162,7 +1162,7 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
                 </div>
                 <div style={{ fontSize:11, color:G.textSub }}>First image is the cover (shown on cards). Up to 10 MB per image. JPG, PNG, WEBP, GIF, AVIF.</div>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:16, marginTop:16 }}>
                 <div>
                   <Label>Status</Label>
                   <select value={form.status} onChange={e => F("status", e.target.value)} style={{ width:"100%", background:G.white, border:`1px solid ${G.border}`, borderBottom:`1px solid ${G.border}`, color:G.text, padding:"8px 12px", fontSize:13, outline:"none", appearance:"none" }}>
@@ -1186,7 +1186,7 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
                 {!apiOnline && <span style={{ fontSize:12, color:"#c0392b" }}>API offline — changes are local only.</span>}
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {tab === "leads" && (
