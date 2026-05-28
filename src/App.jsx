@@ -204,10 +204,43 @@ const Modal = ({ open, onClose, children }) => {
 
 // ─── BRAND LOGO ──────────────────────────────────────────────────────────────
 const brandSlug = (b) => b.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+// Official domains → used to fetch the brand's logo from a CDN.
+const BRAND_DOMAINS = {
+  "rolls-royce":   "rolls-roycemotorcars.com",
+  "mercedes-benz": "mercedes-benz.com",
+  "toyota":        "toyota.com",
+  "lexus":         "lexus.com",
+  "bentley":       "bentleymotors.com",
+  "land-rover":    "landrover.com",
+  "porsche":       "porsche.com",
+  "bmw":           "bmw.com",
+  "audi":          "audi.com",
+  "ford":          "ford.com",
+  "jeep":          "jeep.com",
+  "cadillac":      "cadillac.com",
+  "mclaren":       "mclaren.com",
+  "ferrari":       "ferrari.com",
+  "lamborghini":   "lamborghini.com",
+  "volkswagen":    "volkswagen.com",
+  "nissan":        "nissan-global.com",
+  "honda":         "honda.com",
+  "hyundai":       "hyundai.com",
+  "kia":           "kia.com",
+};
+
 const BrandLogo = ({ brand, size = 30 }) => {
-  const [failed, setFailed] = useState(false);
+  const slug = brandSlug(brand);
+  const domain = BRAND_DOMAINS[slug] || `${slug.replace(/-/g, "")}.com`;
+  // Source priority: local override file → CDN logo → monogram badge.
+  const sources = [
+    `/brands/${slug}.png`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  ];
+  const [idx, setIdx] = useState(0);
   const monogram = brand.split(/[\s-]+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
-  if (failed) {
+
+  if (idx >= sources.length) {
     return (
       <div style={{ width:size, height:size, borderRadius:"50%", background:G.bg2, border:`1px solid ${G.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.36, fontWeight:700, color:G.text, flexShrink:0 }}>
         {monogram}
@@ -215,8 +248,8 @@ const BrandLogo = ({ brand, size = 30 }) => {
     );
   }
   return (
-    <img src={`/brands/${brandSlug(brand)}.png`} alt={brand} onError={() => setFailed(true)}
-      style={{ width:size, height:size, objectFit:"contain", flexShrink:0 }} />
+    <img src={sources[idx]} alt={brand} onError={() => setIdx(i => i + 1)}
+      style={{ width:size, height:size, objectFit:"contain", flexShrink:0, borderRadius:6 }} />
   );
 };
 
