@@ -157,8 +157,8 @@ const Btn = ({ children, onClick, variant="primary", style, full }) => {
 
 const Divider = ({ style }) => <div style={{ height:1, background:G.border, ...style }} />;
 
-const Label = ({ children }) => (
-  <div style={{ fontSize:11, fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:G.text, marginBottom:10 }}>
+const Label = ({ children, style }) => (
+  <div style={{ fontSize:11, fontWeight:600, letterSpacing:"0.08em", textTransform:"uppercase", color:G.text, marginBottom:10, ...style }}>
     {children}
   </div>
 );
@@ -396,7 +396,7 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
 
       {/* Brands — infinite auto-scrolling marquee */}
       <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "1rem 0 1rem 1.25rem" : "1.25rem 0 1.25rem 2.5rem", display:"flex", gap:"1.5rem", alignItems:"center", overflow:"hidden" }}>
-        <Label style={{ marginBottom:0, whiteSpace:"nowrap", flexShrink:0 }}>Our Brands</Label>
+        <Label style={{ marginBottom:0, whiteSpace:"nowrap", flexShrink:0, color:G.accent }}>Our Brands</Label>
         <div style={{ overflow:"hidden", flex:1, WebkitMaskImage:"linear-gradient(90deg, transparent, #000 3%, #000 90%, transparent)", maskImage:"linear-gradient(90deg, transparent, #000 3%, #000 90%, transparent)" }}>
           <div className="marquee-track">
             {[...BRANDS, ...BRANDS].map((b, i) => (
