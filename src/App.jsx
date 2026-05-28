@@ -127,6 +127,9 @@ const injectStyles = () => {
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .fade-up{animation:fadeUp .45s cubic-bezier(0.22,1,0.36,1) both}
     .fade-in{animation:fadeIn .3s ease}
+    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    .marquee-track{display:flex;width:max-content;animation:marquee 30s linear infinite}
+    .marquee-track:hover{animation-play-state:paused}
   `;
   document.head.appendChild(s);
 };
@@ -391,15 +394,19 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
         </div>
       </section>
 
-      {/* Brands */}
-      <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "1rem 1.25rem" : "1.25rem 2.5rem", display:"flex", gap: isMobile ? "1.5rem" : "2.25rem", alignItems:"center", overflowX:"auto" }}>
-        <Label style={{ marginBottom:0, whiteSpace:"nowrap" }}>Our Brands</Label>
-        {BRANDS.map(b => (
-          <div key={b} onClick={() => setPage("inventory")} style={{ display:"flex", alignItems:"center", gap:9, whiteSpace:"nowrap", cursor:"pointer" }}>
-            <BrandLogo brand={b} size={28} />
-            <span style={{ fontSize:12, color:G.textMid, letterSpacing:"0.05em" }}>{b}</span>
+      {/* Brands — infinite auto-scrolling marquee */}
+      <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "1rem 0 1rem 1.25rem" : "1.25rem 0 1.25rem 2.5rem", display:"flex", gap:"1.5rem", alignItems:"center", overflow:"hidden" }}>
+        <Label style={{ marginBottom:0, whiteSpace:"nowrap", flexShrink:0 }}>Our Brands</Label>
+        <div style={{ overflow:"hidden", flex:1, WebkitMaskImage:"linear-gradient(90deg, transparent, #000 3%, #000 90%, transparent)", maskImage:"linear-gradient(90deg, transparent, #000 3%, #000 90%, transparent)" }}>
+          <div className="marquee-track">
+            {[...BRANDS, ...BRANDS].map((b, i) => (
+              <div key={i} onClick={() => setPage("inventory")} style={{ display:"flex", alignItems:"center", gap:9, whiteSpace:"nowrap", cursor:"pointer", marginRight: isMobile ? 28 : 44 }}>
+                <BrandLogo brand={b} size={28} />
+                <span style={{ fontSize:12, color:G.textMid, letterSpacing:"0.05em" }}>{b}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </section>
 
       {/* Featured */}
