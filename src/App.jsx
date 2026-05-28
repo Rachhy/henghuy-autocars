@@ -313,27 +313,27 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
   return (
     <div>
       {/* Hero */}
-      <section style={{ minHeight: isMobile ? "auto" : "90vh", display:"flex", alignItems:"center", padding: isMobile ? "3rem 1.25rem" : "0 2.5rem", borderBottom:`1px solid ${G.border}`, background:G.white }}>
-        <div style={{ maxWidth:1100, margin:"0 auto", width:"100%", display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "2.5rem" : "4rem", alignItems:"center" }}>
+      <section style={{ minHeight: isMobile ? "auto" : "90vh", display:"flex", alignItems:"center", padding: isMobile ? "3rem 1.25rem" : "0 2.5rem", borderBottom:`1px solid ${G.border}`, position:"relative", backgroundImage:"linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.65)), url(/storefront.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto", width:"100%", display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "2.5rem" : "4rem", alignItems:"center", position:"relative", zIndex:1 }}>
           <div className="fade-up">
-            <Tag style={{ marginBottom:20 }}>Phnom Penh · Cambodia</Tag>
-            <h1 style={{ fontFamily:G.serif, fontSize:"clamp(2.5rem,5vw,4rem)", fontWeight:500, color:G.text, lineHeight:1.1, marginBottom:20 }}>
+            <Tag style={{ marginBottom:20, background:"rgba(255,255,255,0.15)", color:"#FFFFFF" }}>Phnom Penh · Cambodia</Tag>
+            <h1 style={{ fontFamily:G.serif, fontSize:"clamp(2.5rem,5vw,4rem)", fontWeight:500, color:"#FFFFFF", lineHeight:1.1, marginBottom:20, textShadow:"0 2px 20px rgba(0,0,0,0.4)" }}>
               Luxury &amp;<br /><em>Premium Cars,</em><br />Delivered in Cambodia
             </h1>
-            <p style={{ color:G.textMid, maxWidth:420, lineHeight:1.9, marginBottom:32, fontSize:13 }}>
+            <p style={{ color:"rgba(255,255,255,0.85)", maxWidth:420, lineHeight:1.9, marginBottom:32, fontSize:13 }}>
               From Toyota Land Cruisers to Rolls-Royce Cullinans — every vehicle inspected, certified, and backed by HengHuy's industry-leading guarantee. 100% installment available.
             </p>
             <div style={{ display:"flex", gap:12 }}>
-              <Btn onClick={() => setPage("inventory")}>Browse Collection</Btn>
-              <Btn variant="outline" onClick={() => setPage("contact")}>Call 092 9999 89</Btn>
+              <Btn onClick={() => setPage("inventory")} style={{ background:"#FFFFFF", color:"#000000" }}>Browse Collection</Btn>
+              <Btn variant="outline" onClick={() => setPage("contact")} style={{ background:"transparent", color:"#FFFFFF", border:"1.5px solid rgba(255,255,255,0.6)" }}>Call 092 9999 89</Btn>
             </div>
           </div>
           {/* Stats */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:G.border }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:"rgba(255,255,255,0.12)", borderRadius:G.radiusLg, overflow:"hidden", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.15)" }}>
             {[["350+","Happy Buyers"],["14","Brands Stocked"],["24/7","Support Line"],["100%","Installment"]].map(([n,l]) => (
-              <div key={l} style={{ background:G.bg, padding:"2rem", textAlign:"center" }}>
-                <div style={{ fontFamily:G.serif, fontSize:"2.5rem", marginBottom:4 }}>{n}</div>
-                <div style={{ fontSize:11, color:G.textSub, letterSpacing:"0.1em", textTransform:"uppercase" }}>{l}</div>
+              <div key={l} style={{ background:"rgba(0,0,0,0.35)", padding:"2rem", textAlign:"center" }}>
+                <div style={{ fontFamily:G.serif, fontSize:"2.5rem", marginBottom:4, color:"#FFFFFF" }}>{n}</div>
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.7)", letterSpacing:"0.1em", textTransform:"uppercase" }}>{l}</div>
               </div>
             ))}
           </div>
