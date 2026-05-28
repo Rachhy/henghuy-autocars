@@ -202,6 +202,24 @@ const Modal = ({ open, onClose, children }) => {
   );
 };
 
+// ─── BRAND LOGO ──────────────────────────────────────────────────────────────
+const brandSlug = (b) => b.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const BrandLogo = ({ brand, size = 30 }) => {
+  const [failed, setFailed] = useState(false);
+  const monogram = brand.split(/[\s-]+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  if (failed) {
+    return (
+      <div style={{ width:size, height:size, borderRadius:"50%", background:G.bg2, border:`1px solid ${G.border}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.36, fontWeight:700, color:G.text, flexShrink:0 }}>
+        {monogram}
+      </div>
+    );
+  }
+  return (
+    <img src={`/brands/${brandSlug(brand)}.png`} alt={brand} onError={() => setFailed(true)}
+      style={{ width:size, height:size, objectFit:"contain", flexShrink:0 }} />
+  );
+};
+
 // ─── CAR CARD ────────────────────────────────────────────────────────────────
 const CarCard = ({ car, onView, onFav, isFav }) => (
   <div className="fade-up" onClick={() => onView(car.id)} style={{ background:G.white, borderRadius:G.radiusLg, cursor:"pointer", transition:"transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s", position:"relative", overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)" }}
@@ -341,9 +359,14 @@ const HomePage = ({ cars, setPage, favorites, toggleFav, showToast, user }) => {
       </section>
 
       {/* Brands */}
-      <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "1rem 1.25rem" : "1rem 2.5rem", display:"flex", gap: isMobile ? "1.25rem" : "2rem", alignItems:"center", overflowX:"auto" }}>
+      <section style={{ background:G.bg2, borderBottom:`1px solid ${G.border}`, padding: isMobile ? "1rem 1.25rem" : "1.25rem 2.5rem", display:"flex", gap: isMobile ? "1.5rem" : "2.25rem", alignItems:"center", overflowX:"auto" }}>
         <Label style={{ marginBottom:0, whiteSpace:"nowrap" }}>Our Brands</Label>
-        {BRANDS.map(b => <span key={b} style={{ fontSize:12, color:G.textMid, whiteSpace:"nowrap", cursor:"pointer", letterSpacing:"0.05em" }} onClick={() => setPage("inventory")}>{b}</span>)}
+        {BRANDS.map(b => (
+          <div key={b} onClick={() => setPage("inventory")} style={{ display:"flex", alignItems:"center", gap:9, whiteSpace:"nowrap", cursor:"pointer" }}>
+            <BrandLogo brand={b} size={28} />
+            <span style={{ fontSize:12, color:G.textMid, letterSpacing:"0.05em" }}>{b}</span>
+          </div>
+        ))}
       </section>
 
       {/* Featured */}
