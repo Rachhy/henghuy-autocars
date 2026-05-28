@@ -973,6 +973,8 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [confirmState, setConfirmState] = useState(null); // { message, confirmLabel, onConfirm }
+  const askConfirm = (message, onConfirm, confirmLabel = "Delete") => setConfirmState({ message, onConfirm, confirmLabel });
   const emptyForm = { brand:"", model:"", year:"", price:"", mileage:"", color:"", engine:"", power:"", transmission:"", top_speed:"", accel:"", emoji:"🚗", desc:"", status:"active", featured:false, badge:"", images:[] };
   const [form, setForm] = useState(emptyForm);
   const F = (k,v) => setForm(f => ({ ...f, [k]:v }));
@@ -1010,15 +1012,16 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
 
   const startEdit = (car) => { setForm({...car, year:car.year.toString(), price:car.price.toString(), mileage:car.mileage.toString(), featured: !!car.featured, badge: car.badge || "", images: car.images || []}); setEditId(car.id); setTab("form"); };
 
-  const deleteCar = async (id) => {
-    if (!confirm("Delete this vehicle?")) return;
-    try {
-      if (apiOnline) await apiDeleteCar(id);
-      else setCars(c => c.filter(x => x.id !== id));
-      showToast("Deleted", "Vehicle removed.");
-    } catch (err) {
-      showToast("Delete failed", err.message);
-    }
+  const deleteCar = (id) => {
+    askConfirm("Delete this vehicle? This cannot be undone.", async () => {
+      try {
+        if (apiOnline) await apiDeleteCar(id);
+        else setCars(c => c.filter(x => x.id !== id));
+        showToast("Deleted", "Vehicle removed.");
+      } catch (err) {
+        showToast("Delete failed", err.message);
+      }
+    });
   };
 
   const toggleStatus = async (id) => {
@@ -1208,7 +1211,7 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
                       <td style={{ padding:"10px 12px", whiteSpace:"nowrap" }}>
                         {b.status !== "confirmed" && <button onClick={() => apiUpdateBookingStatus(b.id, "confirmed").then(() => showToast("Updated","Marked as confirmed.")).catch(e => showToast("Failed", e.message))} style={{ background:"none", border:"none", fontSize:11, color:G.textMid, cursor:"pointer", marginRight:12, letterSpacing:"0.08em" }}>Confirm</button>}
                         {b.status !== "completed" && <button onClick={() => apiUpdateBookingStatus(b.id, "completed").then(() => showToast("Updated","Marked as completed.")).catch(e => showToast("Failed", e.message))} style={{ background:"none", border:"none", fontSize:11, color:G.textMid, cursor:"pointer", marginRight:12, letterSpacing:"0.08em" }}>Done</button>}
-                        <button onClick={() => { if(confirm("Delete this booking?")) apiDeleteBooking(b.id).then(() => showToast("Deleted","Booking removed.")).catch(e => showToast("Failed", e.message)); }} style={{ background:"none", border:"none", fontSize:11, color:"#c0392b", cursor:"pointer", letterSpacing:"0.08em" }}>Delete</button>
+                        <button onClick={() => askConfirm("Delete this booking?", () => apiDeleteBooking(b.id).then(() => showToast("Deleted","Booking removed.")).catch(e => showToast("Failed", e.message)))} style={{ background:"none", border:"none", fontSize:11, color:"#c0392b", cursor:"pointer", letterSpacing:"0.08em" }}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -1245,7 +1248,7 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
                     <div style={{ display:"flex", gap:14, fontSize:11, letterSpacing:"0.08em" }}>
                       {e.status !== "read"     && <button onClick={() => apiUpdateEnquiryStatus(e.id, "read").then(() => showToast("Updated","Marked as read.")).catch(err => showToast("Failed", err.message))} style={{ background:"none", border:"none", color:G.textMid, cursor:"pointer" }}>Mark Read</button>}
                       {e.status !== "replied"  && <button onClick={() => apiUpdateEnquiryStatus(e.id, "replied").then(() => showToast("Updated","Marked as replied.")).catch(err => showToast("Failed", err.message))} style={{ background:"none", border:"none", color:G.textMid, cursor:"pointer" }}>Mark Replied</button>}
-                      <button onClick={() => { if(confirm("Delete this message?")) apiDeleteEnquiry(e.id).then(() => showToast("Deleted","Message removed.")).catch(err => showToast("Failed", err.message)); }} style={{ background:"none", border:"none", color:"#c0392b", cursor:"pointer" }}>Delete</button>
+                      <button onClick={() => askConfirm("Delete this message?", () => apiDeleteEnquiry(e.id).then(() => showToast("Deleted","Message removed.")).catch(err => showToast("Failed", err.message)))} style={{ background:"none", border:"none", color:"#c0392b", cursor:"pointer" }}>Delete</button>
                     </div>
                   </div>
                 ))}
@@ -1254,6 +1257,16 @@ const AdminPage = ({ user, cars, setCars, bookings, enquiries, setPage, showToas
           </>
         )}
       </div>
+
+      {/* Confirmation modal — replaces the browser's native confirm() popup */}
+      <Modal open={!!confirmState} onClose={() => setConfirmState(null)}>
+        <div style={{ fontFamily:G.serif, fontSize:"1.5rem", marginBottom:8 }}>Please confirm</div>
+        <div style={{ fontSize:13, color:G.textMid, lineHeight:1.7, marginBottom:24 }}>{confirmState?.message}</div>
+        <div style={{ display:"flex", gap:12, justifyContent:"flex-end" }}>
+          <Btn variant="outline" onClick={() => setConfirmState(null)}>Cancel</Btn>
+          <Btn onClick={() => { const fn = confirmState?.onConfirm; setConfirmState(null); fn && fn(); }} style={{ background:"#c0392b", color:"#FFFFFF" }}>{confirmState?.confirmLabel || "Confirm"}</Btn>
+        </div>
+      </Modal>
     </div>
   );
 };
