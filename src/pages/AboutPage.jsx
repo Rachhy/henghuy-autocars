@@ -8,11 +8,11 @@ export const AboutPage = ({ setPage }) => {
   return (
   <div>
     {/* Hero */}
-    <section style={{ background:G.white, padding: isMobile ? "3.5rem 1.25rem 3rem" : "5rem 2.5rem 4rem", borderBottom:`1px solid ${G.border}` }}>
+    <section style={{ padding: isMobile ? "5rem 1.25rem 4rem" : "7rem 2.5rem 6rem", borderBottom:`1px solid ${G.border}`, backgroundImage:"linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.65)), url(/storefront.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
       <div style={{ maxWidth:1100, margin:"0 auto" }}>
-        <Label style={{ marginBottom:12 }}>About HengHuy AutoCars</Label>
-        <h1 style={{ fontFamily:G.serif, fontSize: isMobile ? "2rem" : "clamp(2.5rem,6vw,5rem)", fontWeight:500, color:G.text, maxWidth:700, lineHeight:1.1, marginBottom:20 }}>Cambodia's Trusted <em style={{ color:G.text }}>Auto Destination</em></h1>
-        <p style={{ color:G.textMid, maxWidth:480, fontSize:13, lineHeight:1.9 }}>From Toyota to Rolls-Royce, HengHuy AutoCars has served Phnom Penh's most discerning buyers with honest pricing, full inspections, and the easiest installment plans in the country.</p>
+        <Label style={{ marginBottom:12, color:"rgba(255,255,255,0.85)" }}>About HengHuy AutoCars</Label>
+        <h1 style={{ fontFamily:G.serif, fontSize: isMobile ? "2rem" : "clamp(2.5rem,6vw,5rem)", fontWeight:500, color:"#fff", maxWidth:700, lineHeight:1.1, marginBottom:20 }}>Cambodia's Trusted <em style={{ color:"#fff" }}>Auto Destination</em></h1>
+        <p style={{ color:"rgba(255,255,255,0.85)", maxWidth:480, fontSize:13, lineHeight:1.9 }}>From Toyota to Rolls-Royce, HengHuy AutoCars has served Phnom Penh's most discerning buyers with honest pricing, full inspections, and the easiest installment plans in the country.</p>
       </div>
     </section>
 
