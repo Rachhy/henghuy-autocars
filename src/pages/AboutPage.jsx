@@ -1,15 +1,36 @@
+import { useState, useEffect } from "react";
 import { G } from "../styles/theme";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { Label } from "../components/ui";
 import Footer from "../components/Footer";
 
+const HERO_IMAGES = ["/storefront.jpg", "/service-team.jpg", "/service-collage.jpg"];
+
 export const AboutPage = ({ setPage }) => {
   const isMobile = useIsMobile();
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setHeroIndex(i => (i + 1) % HERO_IMAGES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
   <div>
     {/* Hero */}
-    <section style={{ padding: isMobile ? "5rem 1.25rem 4rem" : "7rem 2.5rem 6rem", borderBottom:`1px solid ${G.border}`, backgroundImage:"linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.65)), url(/storefront.jpg)", backgroundSize:"cover", backgroundPosition:"center" }}>
-      <div style={{ maxWidth:1100, margin:"0 auto" }}>
+    <section style={{ position:"relative", overflow:"hidden", padding: isMobile ? "5rem 1.25rem 4rem" : "7rem 2.5rem 6rem", borderBottom:`1px solid ${G.border}` }}>
+      {HERO_IMAGES.map((src, i) => (
+        <div key={src} style={{
+          position:"absolute", inset:0,
+          backgroundImage:`linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.65)), url(${src})`,
+          backgroundSize:"cover", backgroundPosition:"center",
+          opacity: heroIndex === i ? 1 : 0,
+          transition:"opacity 1s ease-in-out",
+        }} />
+      ))}
+      <div style={{ position:"relative", maxWidth:1100, margin:"0 auto" }}>
         <Label style={{ marginBottom:12, color:"rgba(255,255,255,0.85)" }}>About HengHuy AutoCars</Label>
         <h1 style={{ fontFamily:G.serif, fontSize: isMobile ? "2rem" : "clamp(2.5rem,6vw,5rem)", fontWeight:500, color:"#fff", maxWidth:700, lineHeight:1.1, marginBottom:20 }}>Cambodia's Trusted <em style={{ color:"#fff" }}>Auto Destination</em></h1>
         <p style={{ color:"rgba(255,255,255,0.85)", maxWidth:480, fontSize:13, lineHeight:1.9 }}>From Toyota to Rolls-Royce, HengHuy AutoCars has served Phnom Penh's most discerning buyers with honest pricing, full inspections, and the easiest installment plans in the country.</p>
